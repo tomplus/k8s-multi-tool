@@ -29,7 +29,7 @@ class Cmd:
         v1 = client.CoreV1Api()
         for method in dir(v1):
             rer = re.search(r'^list_(.*)_for_all_namespaces$', method)
-            if rer is not None:
+            if rer is not None and method != 'list_event_for_all_namespaces':
                 obj_map[rer.group(1)] = getattr(v1, method)
         return obj_map
 
