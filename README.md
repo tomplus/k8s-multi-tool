@@ -1,4 +1,7 @@
-# k8s-multi-tool
+# k8s-multi-tool (k8smtool)
+
+[![PyPI version](https://badge.fury.io/py/k8smtool.svg)](https://badge.fury.io/py/k8smtool)
+[![pypi supported versions](https://img.shields.io/pypi/pyversions/k8smtool.svg)](https://pypi.python.org/pypi/k8smtool)
 
 Set of tools to manage your Kubernetes clusters.
 
