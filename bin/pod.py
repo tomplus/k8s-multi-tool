@@ -126,7 +126,6 @@ class Cmd:
 
         async def print_pod_logs(name, namespace, container, lines, follow):
             v1 = client.CoreV1Api()
-            print(name, namespace, container, lines, follow)
             resp = await v1.read_namespaced_pod_log(name,
                                                     namespace,
                                                     container=container,
