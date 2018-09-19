@@ -38,7 +38,7 @@ All scripts read the confguration from `.kube/config` or from a file defined by 
 
 Common arguments:
 
-A positional argument - `FILTER`, which exists in some scripts can have values:
+Positional arguments - `[filters [filters ...]]` are optional and can have values:
 * `@namespace` - get objects from `namespace` only
 * `~name` - get objects with name like `name*`
 * `labe~value` - get objects which has `label` equals `value`
@@ -47,7 +47,7 @@ This argument can be joined and repeated like this `@namespace1 @namespace2 ~my-
 
 ## Actions on PODs
 
-Script `pod.py` can list pods, images, execute commands or print logs from PODs.
+The script `pod.py` can list pods, images, execute commands or print logs from PODs.
 
 ```
 usage: pod.py [-h] [--cmd CMD] [--batch-size BATCH_SIZE] [--follow]
@@ -80,7 +80,7 @@ Option for `tail` command::
 # all pods from all namespaces
 pod.py ls
 
-# pods from my-namespace
+# pods from "my-namespace"
 pod.py ls @my-namespace
 
 # pods with name like "dns"
@@ -128,7 +128,7 @@ tpimages/airly-exporter:latest                     default   Running
 ### send exec command to multiple pods
 
 ```
-# exec command "date" on all pods from namespace default (in the same time)
+# exec command "date" on all pods from namespace "default" (in the same time)
 pod.py exec @default --cmd date
 
 # exec command in batch mode (eg. 2 pods at a time)
@@ -141,7 +141,7 @@ pod.py exec @default
 ### tail logs from multiple pods
 
 ```
-# print out last 10 lines from all pods with names started with "kube-dns"
+# print out last 10 lines from all pods with the name like "kube-dns"
 pod.py tail ~kube-dns --lines 10
 
 # follow new logs
@@ -151,7 +151,7 @@ pod.py tail ~kube-dns --follow
 ### delete "broken" pods
 
 ```
-# delete pods which are not in ready state, confirmation is needed
+# delete pods which are not in ready state (confirmation is needed)
 pod.py delete-broken
 ```
 
@@ -192,11 +192,12 @@ kube-system  pod        l7-default-backend-6497bcdb4d-bvwhq   'port': 8080,
 kube-system  service    default-http-backend                  ,"spec":{"ports":[{"name":"http","port":80,"protocol":"TCP","targetPort":8080}],"select
 ```
 
-| RESULT contains this part of object's definition where searched phrase was found
+NOTICE: `RESULT` contains this part of object's definition where searched phrase was found
+
 
 ## Recently created objects
 
-Script `just.py` list newly created objects.
+The script `just.py` lists newly created objects.
 
 ```
 usage: just.py [-h] [--age AGE] [filters [filters ...]]
