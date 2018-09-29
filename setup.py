@@ -10,7 +10,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='k8smtool',
-    version='1.0.3',
+    version='1.1.0',
     description='Set of tools to manage your Kubernetes clusters',
     long_description='Set of tools to manage your Kubernetes clusters',
     url='http://github.com/tomplus/k8s-multi-tool',
