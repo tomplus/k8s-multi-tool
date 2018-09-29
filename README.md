@@ -151,7 +151,7 @@ pod.py tail ~kube-dns --follow
 ### delete "broken" pods
 
 ```
-# delete pods which are not in ready state (confirmation is needed)
+# delete pods which are not in ready state and running (eg. failed, evicted, completed jobs)
 pod.py delete-broken
 ```
 

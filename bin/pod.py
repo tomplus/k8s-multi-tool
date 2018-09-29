@@ -1,12 +1,30 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 import asyncio
 import argparse
+import json
 
 from kubernetes_asyncio import client, config
 from kubernetes_asyncio.stream import WsApiClient
 
 from k8smtool import Filter, Table
+
+
+def print_plain_log(namespace, pod, line):
+    if line[-1] == "\n":
+        line = line[:-1]
+    print("{}:{} {}".format(namespace, pod, line))
+
+
+def print_json_log(namespace, pod, line):
+    try:
+        line = json.loads(line)
+        msg = line.get('@timestamp', '') + line.get('message', '')
+        print_plain_log(namespace, pod, msg)
+        for lexc in line.get('exception', []):
+            print_plain_log(namespace, pod, lexc)
+    except json.decoder.JSONDecodeError:
+        print_plain_log(namespace, pod, line)
 
 
 class Cmd:
@@ -35,6 +53,8 @@ class Cmd:
         group = parser.add_argument_group('Option for `tail` command:')
         group.add_argument('--follow', action="store_true",
                            help="follow logs")
+        group.add_argument('--decode-json', action="store_true",
+                           help="print timestamp/message/exception from logs in logstash (json) format")
         group.add_argument('--lines', type=int, default=10,
                            help="show the last lines")
 
@@ -49,8 +69,11 @@ class Cmd:
         tab.add('NAMESPACE', 'PODS', 'VERSION', 'STATUS', 'CONDITIONS', 'NODE')
         for pod in ret.items:
             if self.filter.check(pod.metadata):
-                conds = [
-                    cond.type for cond in pod.status.conditions if 'T' in cond.status]
+                if pod.status.conditions:
+                    conds = [
+                        cond.type for cond in pod.status.conditions if 'T' in cond.status]
+                else:
+                    conds = [ pod.status.phase ]
                 if pod.metadata.deletion_timestamp is not None:
                     conds.append('Terminating')
                 if check_cond(conds):
@@ -72,7 +95,7 @@ class Cmd:
         await self.list_pods(lambda _: True)
 
     async def do_delete_broken(self):
-
+        v1 = client.CoreV1Api()
         to_delete = await self.list_pods(lambda conds: 'Ready' not in conds)
         confirm = input('Do you want to delete these pods [YES/NO]?')
         if confirm == 'YES':
@@ -126,7 +149,7 @@ class Cmd:
         pods = await self.list_pods(lambda _: True)
         pod_cmd = []
 
-        async def print_pod_logs(name, namespace, container, lines, follow):
+        async def print_pod_logs(name, namespace, container, lines, follow, print_log):
             v1 = client.CoreV1Api()
             resp = await v1.read_namespaced_pod_log(name,
                                                     namespace,
@@ -136,14 +159,21 @@ class Cmd:
                                                     _preload_content=not follow)
 
             if not follow:
-                print('{}/{}\n{}\n'.format(namespace, name, resp))
+                for line in resp.split("\n"):
+                    if line:
+                        print_log(namespace, name, line)
             else:
                 while True:
                     line = await resp.content.readline()
-                    if not line:
+                    if line is None:
                         break
-                    print("{}/{}: {}".format(namespace, name,
-                                             line.decode('utf-8')), end="")
+                    print_log(namespace, name, line)
+
+
+        if self.args.decode_json:
+            print_log = print_json_log
+        else:
+            print_log = print_plain_log
 
         for pod in pods:
             for container in pod.spec.containers:
@@ -151,7 +181,8 @@ class Cmd:
                                               pod.metadata.namespace,
                                               container.name,
                                               self.args.lines,
-                                              self.args.follow))
+                                              self.args.follow,
+                                              print_log))
 
         await asyncio.wait(pod_cmd)
 
